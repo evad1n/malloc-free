@@ -38,10 +38,24 @@ void coalesce()
 /* Returns pointer to memory. Returns NULL if there is not enough space. */
 void *my_malloc(size_t size)
 {
+    // If they enter a negative number the size will overflow to the max integer so this will fire
+    if (size > HEAP_SIZE)
+    {
+        printf("REQUESTED SIZE EXCEEDS HEAP SIZE\n");
+        printf("Did you try to allocate a negative size?\n");
+        return NULL;
+    }
+    // Not sure if this is supposed to happen but it makes sense to deny a request of size 0
+    else if (size == 0)
+    {
+        printf("REFUSING TO ALLOCATE SIZE 0\n");
+        return NULL;
+    }
+
     size_t needed_size = ALIGN_TO * ((size - 1 + ALIGN_TO + sizeof(header)) / ALIGN_TO);
     // printf("requested size: %ld\n", size);
     // printf("allocating size: %ld\n", needed_size - sizeof(header));
-    // printf("total needed size: %ld\n", needed_size);
+    // printf("total needed size: %lu\n", needed_size);
 
     node *curr = free_list_head;
     // printf("Free list start: %ld\n", (uint64_t)free_list_head - offset);

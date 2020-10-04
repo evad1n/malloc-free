@@ -36,12 +36,59 @@ void print_formatted(char *prefix, uint64_t number)
 void walk_free_list()
 {
     printf("Walking through free list...\n");
+
     node *curr = free_list_head;
+    int num_free_chunks = 0;
+
     while (curr)
     {
+        num_free_chunks++;
         printf("Free chunk at %ld with size %ld and next %ld\n", (uint64_t)curr - offset, (uint64_t)curr->size, curr->next ? (uint64_t)curr->next - offset : 0);
         curr = curr->next;
     }
+    printf("There %s %d free chunk%s\n", num_free_chunks == 1 ? "is" : "are", num_free_chunks, num_free_chunks == 1 ? "" : "s");
+}
+
+/* Walks through allocated chunks and prints out info */
+void walk_allocated_chunks()
+{
+    printf("Walking through allocated chunks...\n");
+
+    void *address = heap_pointer;
+    node *last_free = free_list_head;
+
+    int num_allocated_chunks = 0;
+
+    while (address < heap_pointer + HEAP_SIZE)
+    {
+        // If it is free
+        // check if it is in free list
+        if (address == last_free)
+        {
+            node *chunk = (node *)address;
+
+            // next free chunk
+            last_free = last_free->next;
+            // next chunk
+            address += (chunk->size + sizeof(node));
+        }
+        // else it must be allocated
+        else
+        {
+            header *chunk = (header *)address;
+            // check magic number is right
+            assert(chunk->magic == MAGIC_NUMBER);
+
+            num_allocated_chunks++;
+
+            // print out allocated chunk info
+            printf("Allocated chunk at %ld with size %ld and magic %d\n", (uint64_t)chunk - offset, chunk->size, chunk->magic);
+
+            // next chunk
+            address += (chunk->size + sizeof(header));
+        }
+    }
+    printf("There %s %d allocated chunk%s\n", num_allocated_chunks == 1 ? "is" : "are", num_allocated_chunks, num_allocated_chunks == 1 ? "" : "s");
 }
 
 /* Walk through heap and print everything in an ascii diagram. Verifies all memory is accounted for.*/
@@ -118,8 +165,10 @@ void audit()
         }
     }
 
+    assert((uint64_t)address - offset == HEAP_SIZE);
     printf("Accounted for %ld of %ld bytes in heap\n", (uint64_t)address - offset, HEAP_SIZE);
-    printf("There are %d allocated chunk(s) and %d free chunk(s)\n\n", num_allocated_chunks, num_free_chunks);
+    printf("There %s %d allocated chunk%s\n", num_allocated_chunks == 1 ? "is" : "are", num_allocated_chunks, num_allocated_chunks == 1 ? "" : "s");
+    printf("There %s %d free chunk%s\n\n", num_free_chunks == 1 ? "is" : "are", num_free_chunks, num_free_chunks == 1 ? "" : "s");
 }
 
 #pragma endregion Helpers
@@ -192,7 +241,8 @@ void free_at_index(int index)
 void show_commands()
 {
     printf("\naudit - Audits the heap and displays it in diagram format\n");
-    printf("walk - Walks through the free list and prints out info\n");
+    printf("walk free - Walks through the free list and prints out info\n");
+    printf("walk allocated - Walks through the allocated chunks and prints out info\n");
     printf("malloc - Allocates a chunk of a user specified size\n");
     printf("free - Frees the allocated chunk at the index specified by the user\n");
     printf("help - Displays this list of commands\n");
@@ -218,7 +268,20 @@ void start_shell()
         }
         else if (!strcmp(command, "walk"))
         {
-            walk_free_list();
+            char which[20];
+            scanf("%s", which);
+            if (!strcmp(which, "free"))
+            {
+                walk_free_list();
+            }
+            else if (!strcmp(which, "allocated"))
+            {
+                walk_allocated_chunks();
+            }
+            else
+            {
+                printf("Invalid command for 'walk'. Type 'help' to see the list of commands\n");
+            }
         }
         else if (!strcmp(command, "malloc"))
         {
@@ -240,7 +303,7 @@ void start_shell()
         {
             show_commands();
         }
-        else
+        else if (strcmp(command, "quit"))
         {
             printf("Unrecognized command. Type 'help' to see the list of commands\n");
         }
@@ -281,7 +344,7 @@ int main(int argc, char const *argv[])
             test_worst_fit();
             break;
         case 7:
-            test_malloc_returns_null();
+            test_malloc_bad_size();
             break;
         default:
             printf("Unrecognized flag. Please consult the following usage.\n");
@@ -292,7 +355,7 @@ int main(int argc, char const *argv[])
             printf("4 - run coalescing tests.\n");
             printf("5 - run alternating sequence tests.\n");
             printf("6 - run worst fit tests.\n");
-            printf("7 - run malloc return null tests.\n");
+            printf("7 - run malloc bad value tests.\n");
             printf("\nOr do not specify any flags and it will run an interactive shell.\n");
             break;
         }

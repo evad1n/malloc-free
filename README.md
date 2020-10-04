@@ -8,14 +8,14 @@ make
 ./malloc_free.exe [TEST FLAG]
 ```
 Test flags are as described:
-- 0 - run all tests
-- 0 - run free chunk reuse tests
-- 1 - run sorted free list tests
-- 2 - run splitting free chunks tests
-- 3 - run coalescing tests
-- 4 - run alternating sequence tests
-- 5 - run worst fit tests
-- 6 - run malloc return null tests
+- 0 - run all tests below in order
+- 1 - run free chunk reuse tests
+- 2 - run sorted free list tests
+- 3 - run splitting free chunks tests
+- 4 - run coalescing tests
+- 5 - run alternating sequence tests
+- 6 - run worst fit tests
+- 7 - run malloc bad size tests
 
 or if you want to open an interactive shell just have no flags
 ```
@@ -30,11 +30,13 @@ or
 
 I am using worst-fit allocation, and when freeing I am inserting in a sorted position.
 
+When allocating chunks, size 0 will not be accepted. I looked up what the typical case was with the official malloc, and it is allowed to either return NULL or return the address. I decided to return NULL as it made more sense to me. When allocating negative sizes, the behavior is the same as the official malloc and the size_t type will overflow to the max value and it will exceed the allowed size.
+
 I am using pragmas to collapse my code and make it more readable so I used the flag `-Wno-unknown-pragmas`.
 
 All of these tests will at some point call the audit function which will print a diagram of the chunks similar to what is seen in [chapter 17 of the 3ep book](http://pages.cs.wisc.edu/~remzi/OSTEP/vm-freespace.pdf). This function will also verify the integrity of the magic number for each allocated chunk.
 
-Unless otherwise specified, all allocated chunks will be 1/20 of the heap size.
+Unless otherwise specified, all allocated chunks in tests will be 1/20 of the heap size.
 
 ## Free chunk reuse tests
 
@@ -68,14 +70,17 @@ After each of these tests, verifies that no free chunks are next to each other.
 
 ## Worst fit tests
 
-- Allocates 2 chunks. Frees the first. Allocates a new chunk of size less than the first chunk. Verifies that this chunk was not allocated at the start of the heap, but rather after the second chunk, thereby taking the free space that was biggest.
+- Allocates 2 chunks. Frees the first. Allocates a new chunk of size less than the first chunk. Verifies that this chunk was not allocated at the start of the heap, but after the second chunk, thereby taking the free space that was biggest.
 - Allocates 3 chunks. The middle chunk will be a size equal to half the heap size. Frees the middle chunk. Allocates 4 chunks. Verifies that the first 3 chunks were allocated in the middle and the last chunk was allocated at the end (when the size of the middle free chunk became less than the last free chunk)
 
 
-## Malloc returns null tests
+## Malloc bad size tests
 
 - Request 1 chunk that is twice the heap size. Verifies that the return is NULL.
 - Allocated 2 chunks that come very close to totaling the heap size. Request 1 chunk that will make the total greater than the heap size. Verifies that the return is NULL.
+- Request a chunk of size -1. Verifies that the return is NULL.
+- Request a large (but still less than the size of the heap) negative chunk size. Verifies that the return is NULL.
+- Request a chunk of size 0. Verifies that the return is NULL.
 
 
 # NOTES
