@@ -57,20 +57,22 @@ void *my_malloc(size_t size)
     // printf("allocating size: %ld\n", needed_size - sizeof(header));
     // printf("total needed size: %lu\n", needed_size);
 
-    node *curr = free_list_head;
     // printf("Free list start: %ld\n", (uint64_t)free_list_head - offset);
 
     // WORST FIT
     // Search for biggest chunk for worst fit
+    node *curr = free_list_head;
+    node *biggest_chunk_prev = curr;
     node *biggest_chunk = curr;
-    while (curr->next)
+    while (curr)
     {
-        curr = curr->next;
         // printf("Checking chunk at %ld with size %ld\n", (uint64_t)curr - offset, curr->size);
-        if (curr->size > biggest_chunk->size)
+        if (curr->next && curr->next->size > biggest_chunk->size)
         {
-            biggest_chunk = curr;
+            biggest_chunk_prev = curr;
+            biggest_chunk = curr->next;
         }
+        curr = curr->next;
     }
 
     // If there is no chunk big enough return NULL
@@ -99,10 +101,20 @@ void *my_malloc(size_t size)
 
     // printf("Allocated memory will be returned at %ld\nShould be %ld above allocated header address\n", (uint64_t)allocated_address - offset, sizeof(header));
 
-    // Change free list
-    free_list_head = (node *)((char *)biggest_chunk + needed_size);
-    free_list_head->size = prev_size - needed_size;
-    free_list_head->next = prev_next;
+    // Split free chunk
+    // If the chunk to be split is the head
+    if (biggest_chunk == free_list_head)
+    {
+        free_list_head = (node *)((char *)biggest_chunk + needed_size);
+        free_list_head->size = prev_size - needed_size;
+        free_list_head->next = prev_next;
+    }
+    else
+    {
+        node *split_free_chunk = (node *)((char *)biggest_chunk + needed_size);
+        split_free_chunk->size = prev_size - needed_size;
+        biggest_chunk_prev->next = split_free_chunk;
+    }
 
     // printf("Free list chunk now at %ld, with size %ld and next %ld\n", (uint64_t)free_list_head - offset, free_list_head->size, (uint64_t)free_list_head->next);
 

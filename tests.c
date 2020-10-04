@@ -4,15 +4,45 @@
 #include "tests.h"
 
 #define CHUNK_SIZE (HEAP_SIZE / 20)
+#define MAX_CHUNKS 10
 
 #pragma region Test_Helpers
 
 /* Adds emphasis */
-void test_formatter(char *message)
+void emphasis(char *message)
 {
-    printf("\n===========================================================================================\n");
-    printf("%s\n", message);
-    printf("===========================================================================================\n");
+    char top[100] = {0};
+    char bot[100] = {0};
+    for (size_t i = 0; i < strlen(message); i++)
+    {
+        strcat(top, "=");
+        strcat(bot, "=");
+    }
+    printf("\n%s\n%s\n%s\n\n", top, message, bot);
+}
+
+/* Just colors it green to indicate success */
+void success(char *message)
+{
+    printf("\x1b[32m");
+    emphasis(message);
+    printf("\x1b[0m");
+}
+
+void free_chunks(void *chunks[], int num_to_free)
+{
+    int index = 0;
+    int num_freed = 0;
+    while (num_freed < num_to_free)
+    {
+        header *hptr = (header *)chunks[index] - 1;
+        if (hptr->magic == MAGIC_NUMBER)
+        {
+            my_free(chunks[index]);
+            num_freed++;
+        }
+        index++;
+    }
 }
 
 bool check_allocated_chunks()
@@ -82,185 +112,204 @@ bool verify_sorted()
 
 void test_free_chunk_reuse()
 {
-    test_formatter("TESTING FREE CHUNKS BEING REUSED AS MUCH AS POSSIBLE");
-}
+    emphasis("TESTING FREE CHUNKS BEING REUSED AS MUCH AS POSSIBLE");
 
-void test_splitting_free_chunks()
-{
-    test_formatter("TESTING FREE CHUNKS ARE SPLIT PROPERLY WHEN ALLOCATING");
-}
+    void *chunks[MAX_CHUNKS];
 
-void test_coalesce()
-{
-    printf("TESTING FREE CHUNKS BEING COALESCED PROPERLY\n");
-    printf("====================================================\n");
+    chunks[0] = my_malloc(CHUNK_SIZE);
 
-    int *data_1;
-    int *data_2;
-    int *data_3;
-    int *data_4;
-    int *data_5;
+    free_chunks(chunks, 1);
 
-    printf("ALLOCATING 5 CHUNKS\n");
-    data_1 = (int *)my_malloc(CHUNK_SIZE);
-    data_2 = (int *)my_malloc(CHUNK_SIZE);
-    data_3 = (int *)my_malloc(CHUNK_SIZE);
-    data_4 = (int *)my_malloc(CHUNK_SIZE);
-    data_5 = (int *)my_malloc(CHUNK_SIZE);
-    audit();
-    printf("FREEING ALL CHUNKS...\n");
-    my_free(data_1);
-    my_free(data_2);
-    my_free(data_3);
-    my_free(data_4);
-    my_free(data_5);
-    printf("Making sure there is only 1 chunk\n");
-    assert(free_list_head->next == NULL);
-    audit();
-    walk_free_list();
-    printf("\nTEST PASSED\n");
-
-    printf("ALLOCATING 5 CHUNKS\n");
-    data_1 = (int *)my_malloc(CHUNK_SIZE);
-    data_2 = (int *)my_malloc(CHUNK_SIZE);
-    data_3 = (int *)my_malloc(CHUNK_SIZE);
-    data_4 = (int *)my_malloc(CHUNK_SIZE);
-    data_5 = (int *)my_malloc(CHUNK_SIZE);
-    audit();
-    printf("FREEING SOME CHUNKS...\n");
-    my_free(data_1);
-    my_free(data_2);
-    my_free(data_4);
-    my_free(data_5);
-    printf("Making sure there are only 2 chunks\n");
-    assert(free_list_head->next->next == NULL);
-    audit();
-    walk_free_list();
-    printf("\nTEST PASSED\n");
-
-    printf("\nALL COALESCING TESTS PASSED\n");
+    success("ALL FREE CHUNK RESUSE TESTS PASSED");
 }
 
 void test_sorted_free_list()
 {
-    printf("\n===========================================================================================\n");
-    printf("\nTESTING FREE LIST IS SORTED IN IN-MEMORY ORDER\n");
-    printf("===========================================================================================\n");
+    emphasis("TESTING FREE LIST IS SORTED IN IN-MEMORY ORDER");
 
-    int *data_1;
-    int *data_2;
-    int *data_3;
-    int *data_4;
-    int *data_5;
+    void *chunks[MAX_CHUNKS];
 
     printf("ALLOCATING CHUNKS\n");
-    data_1 = (int *)my_malloc(CHUNK_SIZE);
-    data_2 = (int *)my_malloc(CHUNK_SIZE);
-    data_3 = (int *)my_malloc(CHUNK_SIZE);
-    data_4 = (int *)my_malloc(CHUNK_SIZE);
-    data_5 = (int *)my_malloc(CHUNK_SIZE);
+    chunks[1] = my_malloc(CHUNK_SIZE);
+    chunks[2] = my_malloc(CHUNK_SIZE);
+    chunks[3] = my_malloc(CHUNK_SIZE);
+    chunks[4] = my_malloc(CHUNK_SIZE);
+    chunks[5] = my_malloc(CHUNK_SIZE);
     // audit();
     printf("FREEING SOME CHUNKS IN ORDER TO SCREW IT UP\n");
-    my_free(data_1);
+    my_free(chunks[1]);
     audit();
-    my_free(data_3);
+    my_free(chunks[3]);
     audit();
-    my_free(data_5);
+    my_free(chunks[5]);
     printf("SHOULD STILL BE IN ORDER\n");
     audit();
 
     assert(verify_sorted());
 
     // Free everything
-    my_free(data_2);
-    my_free(data_4);
+    my_free(chunks[2]);
+    my_free(chunks[4]);
+
+    success("ALL SORTED FREE LIST TESTS PASSED");
+}
+
+void test_splitting_free_chunks()
+{
+    emphasis("TESTING FREE CHUNKS ARE SPLIT PROPERLY WHEN ALLOCATING");
+
+    void *chunks[MAX_CHUNKS];
+
+    chunks[0] = my_malloc(CHUNK_SIZE);
+
+    free_chunks(chunks, 1);
+
+    success("ALL SPLITTING FREE CHUNKS TESTS PASSED");
+}
+
+void test_coalesce()
+{
+    emphasis("TESTING FREE CHUNKS BEING COALESCED PROPERLY");
+
+    void *chunks[MAX_CHUNKS];
+
+    printf("ALLOCATING 5 CHUNKS\n");
+    chunks[1] = my_malloc(CHUNK_SIZE);
+    chunks[2] = my_malloc(CHUNK_SIZE);
+    chunks[3] = my_malloc(CHUNK_SIZE);
+    chunks[4] = my_malloc(CHUNK_SIZE);
+    chunks[5] = my_malloc(CHUNK_SIZE);
+    audit();
+    printf("FREEING ALL CHUNKS...\n");
+    my_free(chunks[1]);
+    my_free(chunks[2]);
+    my_free(chunks[3]);
+    my_free(chunks[4]);
+    my_free(chunks[5]);
+    printf("Making sure there is only 1 chunk\n");
+    assert(free_list_head->next == NULL);
+    audit();
+    walk_free_list();
+    printf("\nTEST PASSED\n\n");
+
+    printf("ALLOCATING 5 CHUNKS\n");
+    chunks[1] = my_malloc(CHUNK_SIZE);
+    chunks[2] = my_malloc(CHUNK_SIZE);
+    chunks[3] = my_malloc(CHUNK_SIZE);
+    chunks[4] = my_malloc(CHUNK_SIZE);
+    chunks[5] = my_malloc(CHUNK_SIZE);
+    audit();
+    printf("FREEING SOME CHUNKS...\n");
+    my_free(chunks[1]);
+    my_free(chunks[2]);
+    my_free(chunks[4]);
+    my_free(chunks[5]);
+    printf("Making sure there are only 2 chunks\n");
+    assert(free_list_head->next->next == NULL);
+    audit();
+    walk_free_list();
+    printf("\nTEST PASSED\n\n");
+
+    success("ALL COALESCING TESTS PASSED");
 }
 
 void test_alternating_sequence()
 {
-    printf("\n===========================================================================================\n");
-    printf("TESTING HEAP IS IN ALTERNATING SEQUENCE OF 1 FREE CHUNK AND 1 OR MORE ALLOCATED CHUNKS\n");
-    printf("===========================================================================================\n");
+    emphasis("TESTING HEAP IS IN ALTERNATING SEQUENCE OF 1 FREE CHUNK AND 1 OR MORE ALLOCATED CHUNKS");
+
+    void *chunks[MAX_CHUNKS];
+
+    chunks[0] = my_malloc(CHUNK_SIZE);
+    chunks[1] = my_malloc(CHUNK_SIZE);
+
+    audit();
+    free_chunks(chunks, 2);
+    audit();
+
+    success("ALL ALTERNATING SEQUENCE TESTS PASSED");
 }
 
 void test_worst_fit()
 {
-    printf("\n===========================================================================================\n");
-    printf("TESTING WORST FIRST ALLOCATION\n");
-    printf("===========================================================================================\n\n");
+    emphasis("TESTING WORST FIRST ALLOCATION");
 
-    void *ptrs[10];
+    void *chunks[MAX_CHUNKS];
 
     printf("ALLOCATING 2 CHUNKS\n");
-    ptrs[0] = my_malloc(CHUNK_SIZE);
-    ptrs[1] = my_malloc(CHUNK_SIZE);
+    chunks[0] = my_malloc(CHUNK_SIZE);
+    chunks[1] = my_malloc(CHUNK_SIZE);
     printf("FREEING FIRST CHUNK\n");
-    my_free(ptrs[0]);
+    my_free(chunks[0]);
     printf("ALLOCATING CHUNK OF SMALLER SIZE\n");
-    ptrs[0] = my_malloc(CHUNK_SIZE / 2);
-    assert(ptrs[0] > ptrs[1]);
-    my_free(ptrs[0]);
-    my_free(ptrs[1]);
-    printf("\nTEST PASSED\n");
+    chunks[0] = my_malloc(CHUNK_SIZE / 2);
+    assert(chunks[0] > chunks[1]);
+    free_chunks(chunks, 2);
+    printf("\nTEST PASSED\n\n");
 
-    printf("ALLOCATING 2 CHUNKS\n");
-    ptrs[0] = my_malloc(CHUNK_SIZE);
-    ptrs[1] = my_malloc(CHUNK_SIZE);
-    printf("FREEING FIRST CHUNK\n");
-    my_free(ptrs[0]);
-    printf("ALLOCATING CHUNK OF SMALLER SIZE\n");
-    ptrs[0] = my_malloc(CHUNK_SIZE / 2);
-    assert(ptrs[0] > ptrs[1]);
-    my_free(ptrs[1]);
-    printf("\nTEST PASSED\n");
+    audit();
 
-    printf("\nALL WORST FIT ALLOCATION TESTS PASSED\n");
+    printf("ALLOCATING 3 CHUNKS. MIDDLE CHUNK IS HALF THE HEAP SIZE\n");
+    chunks[0] = my_malloc(CHUNK_SIZE);
+    chunks[1] = my_malloc(HEAP_SIZE / 2);
+    chunks[2] = my_malloc(CHUNK_SIZE);
+    printf("FREEING MIDDLE CHUNK\n");
+    my_free(chunks[1]);
+    printf("ALLOCATING 4 CHUNKS\n");
+    chunks[1] = my_malloc(CHUNK_SIZE);
+    assert(chunks[2] > chunks[0]);
+    chunks[3] = my_malloc(CHUNK_SIZE);
+    assert(chunks[2] > chunks[3]);
+    chunks[4] = my_malloc(CHUNK_SIZE);
+    assert(chunks[2] > chunks[4]);
+    chunks[5] = my_malloc(CHUNK_SIZE);
+    assert(chunks[2] < chunks[5]);
+    free_chunks(chunks, 6);
+    printf("\nTEST PASSED\n\n");
+
+    success("ALL WORST FIT ALLOCATION TESTS PASSED");
 }
 
 void test_malloc_bad_size()
 {
-    printf("\n===========================================================================================\n");
-    printf("TESTING MALLOC RETURNS NULL ON BAD VALUE SIZE REQUESTS\n");
-    printf("===========================================================================================\n\n");
+    emphasis("TESTING MALLOC RETURNS NULL ON BAD VALUE SIZE REQUESTS");
 
-    void *ptrs[10];
+    void *chunks[MAX_CHUNKS];
 
     printf("REQUESTING 1 CHUNK THAT IS TWICE THE SIZE OF HEAP\n");
-    ptrs[0] = my_malloc(2 * HEAP_SIZE);
-    assert(ptrs[0] == NULL);
-    printf("\nTEST PASSED\n");
+    chunks[0] = my_malloc(2 * HEAP_SIZE);
+    assert(chunks[0] == NULL);
+    printf("\nTEST PASSED\n\n");
 
     printf("ALLOCATING 2 CHUNKS WITH SUM SLIGHTLY SMALLER THAN HEAP SIZE\n");
-    ptrs[0] = my_malloc((HEAP_SIZE / 2) - (CHUNK_SIZE / 2));
-    ptrs[1] = my_malloc((HEAP_SIZE / 2) - (CHUNK_SIZE / 2));
+    chunks[0] = my_malloc((HEAP_SIZE / 2) - (CHUNK_SIZE / 2));
+    chunks[1] = my_malloc((HEAP_SIZE / 2) - (CHUNK_SIZE / 2));
     printf("REQUESTING ADDITIONAL CHUNK WITH SIZE GREATER THAN REMAINING HEAP SIZE\n");
-    ptrs[2] = my_malloc(CHUNK_SIZE);
-    assert(ptrs[2] == NULL);
-    my_free(ptrs[0]);
-    my_free(ptrs[1]);
-    printf("\nTEST PASSED\n");
+    chunks[2] = my_malloc(CHUNK_SIZE);
+    assert(chunks[2] == NULL);
+    free_chunks(chunks, 2);
+    printf("\nTEST PASSED\n\n");
 
     printf("REQUESTING 1 CHUNK OF SIZE -1\n");
-    ptrs[0] = my_malloc(-1);
-    assert(ptrs[0] == NULL);
-    printf("\nTEST PASSED\n");
+    chunks[0] = my_malloc(-1);
+    assert(chunks[0] == NULL);
+    printf("\nTEST PASSED\n\n");
 
     printf("REQUESTING LARGE NEGATIVE SIZE CHUNK\n");
-    ptrs[0] = my_malloc(-HEAP_SIZE / 2);
-    assert(ptrs[0] == NULL);
-    printf("\nTEST PASSED\n");
+    chunks[0] = my_malloc(-HEAP_SIZE / 2);
+    assert(chunks[0] == NULL);
+    printf("\nTEST PASSED\n\n");
 
     printf("REQUESTING SIZE 0 CHUNK\n");
-    ptrs[0] = my_malloc(0);
-    assert(ptrs[0] == NULL);
-    printf("\nTEST PASSED\n");
+    chunks[0] = my_malloc(0);
+    assert(chunks[0] == NULL);
+    printf("\nTEST PASSED\n\n");
 
-    printf("\nALL MALLOC RETURNS NULL ON BAD SIZE REQUEST TESTS PASSED\n");
+    success("ALL MALLOC BAD SIZE TESTS PASSED");
 }
 
 void test_all()
 {
-    test_formatter("RUNNING ALL TESTS\n\n");
+    emphasis("RUNNING ALL TESTS");
     test_free_chunk_reuse();
     test_sorted_free_list();
     test_splitting_free_chunks();
@@ -268,6 +317,7 @@ void test_all()
     test_alternating_sequence();
     test_worst_fit();
     test_malloc_bad_size();
+    success("ALL TESTS PASSED");
 }
 
 #pragma endregion Tests

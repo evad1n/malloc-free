@@ -15,8 +15,7 @@ void print_formatted(char *prefix, uint64_t number)
     sprintf(num_string, "%ld", number);
     int spaces = (format_size - 4) - strlen(num_string) - strlen(prefix);
 
-    char *formatted;
-    formatted = malloc(sizeof(char) * format_size);
+    char formatted[50] = {0};
 
     formatted[0] = '*';
     formatted[1] = ' ';
@@ -29,7 +28,6 @@ void print_formatted(char *prefix, uint64_t number)
     strcat(formatted, " *");
 
     printf("%s\n", formatted);
-    free(formatted);
 }
 
 /* Walks through free list and prints out info */

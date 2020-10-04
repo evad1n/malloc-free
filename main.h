@@ -4,6 +4,7 @@
 #include <string.h>
 
 void walk_free_list();
+void walk_allocated_chunks();
 void audit();
 
 #endif
