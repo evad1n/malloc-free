@@ -121,7 +121,7 @@ void *my_malloc(size_t size)
     return (void *)allocated_address;
 }
 
-/* Frees the allocated chunk starting at the pointer passed in. Orders and coalesces the free list after. */
+/* Frees the allocated chunk starting at the pointer passed in. Orders and coalesces the free list afterwards. */
 void my_free(void *ptr)
 {
     header *hptr = (header *)ptr - 1;
