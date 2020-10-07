@@ -1,10 +1,15 @@
 NAME=malloc_free
 CFLAGS=gcc -Wall -Werror -Wno-unknown-pragmas
 
+.PHONY: test
+
 all: $(NAME)
 
 run: $(NAME)
 	./$(NAME).exe
+
+test: $(NAME)
+	./$(NAME).exe test
 
 $(NAME): main.o malloc_free.o tests.o
 	$(CFLAGS) -o $(NAME).exe main.o malloc_free.o tests.o

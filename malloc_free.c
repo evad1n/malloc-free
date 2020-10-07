@@ -7,6 +7,13 @@ const int MAGIC_NUMBER = 123456789;
 // Align to 64-bit word which is 8 bytes
 const size_t ALIGN_TO = 8;
 
+/* Given a requested size, returns the total aligned size needed. */
+size_t align(size_t raw)
+{
+    size_t aligned = ALIGN_TO * ((raw - 1 + ALIGN_TO + sizeof(header)) / ALIGN_TO);
+    return aligned;
+}
+
 /* Coalesces all free chunks that are next to each other in memory. */
 void coalesce()
 {
@@ -52,7 +59,7 @@ void *my_malloc(size_t size)
         return NULL;
     }
 
-    size_t needed_size = ALIGN_TO * ((size - 1 + ALIGN_TO + sizeof(header)) / ALIGN_TO);
+    size_t needed_size = align(size);
     // printf("requested size: %ld\n", size);
     // printf("allocating size: %ld\n", needed_size - sizeof(header));
     // printf("total needed size: %lu\n", needed_size);

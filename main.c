@@ -41,7 +41,7 @@ void walk_free_list()
     while (curr)
     {
         num_free_chunks++;
-        printf("Free chunk at %ld with size %ld and next %ld\n", (uint64_t)curr - offset, (uint64_t)curr->size, curr->next ? (uint64_t)curr->next - offset : 0);
+        printf("Free chunk at address %ld with size %ld and next %ld\n", (uint64_t)curr - offset, (uint64_t)curr->size, curr->next ? (uint64_t)curr->next - offset : 0);
         curr = curr->next;
     }
     printf("There %s %d free chunk%s\n", num_free_chunks == 1 ? "is" : "are", num_free_chunks, num_free_chunks == 1 ? "" : "s");
@@ -80,7 +80,7 @@ void walk_allocated_chunks()
             num_allocated_chunks++;
 
             // print out allocated chunk info
-            printf("Allocated chunk at %ld with size %ld and magic %d\n", (uint64_t)chunk - offset, chunk->size, chunk->magic);
+            printf("Allocated chunk at address %ld with size %ld and magic %d\n", (uint64_t)chunk - offset, chunk->size, chunk->magic);
 
             // next chunk
             address += (chunk->size + sizeof(header));
@@ -102,7 +102,6 @@ void audit()
 
     // WALK BY CHUNK
     // SIMULTANEOUSLY WALK FREE LIST WHEN FINDING A FREE CHUNK
-    // Check for in memory order, coalescing
 
     void *address = heap_pointer;
     node *last_free = free_list_head;
@@ -112,6 +111,9 @@ void audit()
 
     while (address < heap_pointer + HEAP_SIZE)
     {
+        // Check for alignment
+        assert(((uint64_t)address - offset) % 8 == 0);
+
         // If it is free
         // check if it is in free list
         if (address == last_free)
@@ -235,16 +237,75 @@ void free_at_index(int index)
     }
 }
 
-/* Show a list of commands for the interactive shell */
+/* Show a list of commands for the interactive shell. */
 void show_commands()
 {
     printf("\naudit - Audits the heap and displays it in diagram format\n");
     printf("walk free - Walks through the free list and prints out info\n");
     printf("walk allocated - Walks through the allocated chunks and prints out info\n");
     printf("malloc - Allocates a chunk of a user specified size\n");
-    printf("free - Frees the allocated chunk at the index specified by the user\n");
+    printf("free - Frees the allocated chunk at the address specified by the user\n");
+    printf("test - Select a test to run\n");
+    printf("reset - Clears the heap of allocated chunks\n");
     printf("help - Displays this list of commands\n");
     printf("quit - End the session\n\n");
+}
+
+/* Show the available tests. */
+void show_tests()
+{
+    printf("             AVAILABLE TESTS             \n");
+    printf("=========================================\n");
+    printf("Please note: running a test will clear the heap\n\n");
+    printf("all - run all tests in below order\n");
+    printf("reuse - run free chunk reuse tests\n");
+    printf("sorted - run sorted free list tests\n");
+    printf("splitting - run splitting free chunks tests\n");
+    printf("coalescing - run coalescing tests\n");
+    printf("alternating - run alternating sequence tests\n");
+    printf("fit - run worst fit tests\n");
+    printf("return - run malloc bad value tests\n\n");
+}
+
+/* Run the selected test. */
+void select_test(char *which)
+{
+    if (!strcmp(which, "all"))
+    {
+        test_all();
+    }
+    else if (!strcmp(which, "reuse"))
+    {
+        test_free_chunk_reuse();
+    }
+    else if (!strcmp(which, "sorted"))
+    {
+        test_sorted_free_list();
+    }
+    else if (!strcmp(which, "splitting"))
+    {
+        test_splitting_free_chunks();
+    }
+    else if (!strcmp(which, "coalescing"))
+    {
+        test_coalesce();
+    }
+    else if (!strcmp(which, "alternating"))
+    {
+        test_alternating_sequence();
+    }
+    else if (!strcmp(which, "fit"))
+    {
+        test_worst_fit();
+    }
+    else if (!strcmp(which, "return"))
+    {
+        test_malloc_bad_size();
+    }
+    else
+    {
+        printf("Unrecognized test selection. Type 'test' to see the list of available tests\n");
+    }
 }
 
 /* Start the interactive shell */
@@ -259,7 +320,7 @@ void start_shell()
         printf("> ");
         scanf("%s", command);
 
-        // Which commands to execute, switch statements only accept int values :C
+        // Which commands to execute
         if (!strcmp(command, "audit"))
         {
             audit();
@@ -278,7 +339,7 @@ void start_shell()
             }
             else
             {
-                printf("Invalid command for 'walk'. Type 'help' to see the list of commands\n");
+                printf("Invalid command for 'walk'. Use 'free' or 'allocated'\n");
             }
         }
         else if (!strcmp(command, "malloc"))
@@ -291,11 +352,34 @@ void start_shell()
         }
         else if (!strcmp(command, "free"))
         {
-            int index;
-            printf("Index of allocated chunk to free (the first allocated chunk is index 1): ");
-            scanf("%d", &index);
-            printf("You requested to free allocated chunk at index %d\n", index);
-            free_at_index(index);
+            int address;
+            printf("Address of allocated chunk to free (address displayed in audit): ");
+            scanf("%d", &address);
+            printf("You requested to free allocated chunk at address %d\n", address);
+
+            // Make sure it is valid
+            header *chunk = (header *)(address + offset);
+            if (chunk->magic == MAGIC_NUMBER)
+            {
+                my_free(chunk + 1);
+                printf("Freed chunk at address %d\n", address);
+            }
+            else
+            {
+                printf("No allocated chunk found at address %d\n", address);
+            }
+        }
+        else if (!strcmp(command, "test"))
+        {
+            show_tests();
+            char which[20];
+            printf("Which test to run: ");
+            scanf("%s", which);
+            select_test(which);
+        }
+        else if (!strcmp(command, "reset"))
+        {
+            free_all_chunks();
         }
         else if (!strcmp(command, "help"))
         {
@@ -303,7 +387,7 @@ void start_shell()
         }
         else if (strcmp(command, "quit"))
         {
-            printf("Unrecognized command. Type 'help' to see the list of commands\n");
+            printf("Unrecognized command. Type 'help' to see the list of commands.\n");
         }
     }
     printf("\nSession ended\n");
@@ -314,53 +398,17 @@ void start_shell()
 int main(int argc, char const *argv[])
 {
     init_heap();
+    init_tests();
 
-    // Which test to run
     if (argv[1])
     {
-        switch (atoi(argv[1]))
-        {
-        case 0:
-            test_all();
-            break;
-        case 1:
-            test_free_chunk_reuse();
-            break;
-        case 2:
-            test_sorted_free_list();
-            break;
-        case 3:
-            test_splitting_free_chunks();
-            break;
-        case 4:
-            test_coalesce();
-            break;
-        case 5:
-            test_alternating_sequence();
-            break;
-        case 6:
-            test_worst_fit();
-            break;
-        case 7:
-            test_malloc_bad_size();
-            break;
-        default:
-            printf("Unrecognized flag. Please consult the following usage.\n");
-            printf("0 - run all tests in below order.\n");
-            printf("1 - run free chunk reuse tests.\n");
-            printf("2 - run sorted free list tests.\n");
-            printf("3 - run splitting free chunks tests.\n");
-            printf("4 - run coalescing tests.\n");
-            printf("5 - run alternating sequence tests.\n");
-            printf("6 - run worst fit tests.\n");
-            printf("7 - run malloc bad value tests.\n");
-            printf("\nOr do not specify any flags and it will run an interactive shell.\n");
-            break;
-        }
+        test_all();
     }
-    // No arguments defaults to starting the interactive shell
     else
     {
-        start_shell();
+        // start_shell();
+        int x = 42;
+        int res = (x >> 3) << 3;
+        printf("%d masked with 8 is %d\n", x, res);
     }
 }

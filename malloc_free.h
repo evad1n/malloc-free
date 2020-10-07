@@ -32,8 +32,8 @@ node *free_list_head;
 // Offset for displaying understandable values
 uint64_t offset;
 
+size_t align();
 void coalesce();
-void resorder();
 void *my_malloc(size_t size);
 void my_free(void *ptr);
 void init_heap();
