@@ -265,8 +265,8 @@ void test_splitting_free_chunks()
     free_all_chunks();
     passed();
 
-    printf("ALLOCATING 1 CHUNK THAT IS THE SIZE OF THE HEAP...\n");
-    chunks[0] = my_malloc(HEAP_SIZE);
+    printf("ALLOCATING 1 CHUNK THAT IS THE MAX CHUNK SIZE THE HEAP CAN HOLD...\n");
+    chunks[0] = my_malloc(HEAP_SIZE - sizeof(header));
     printf("VERIFYING FREE LIST HEAD IS NULL...\n");
     audit();
     assert(free_list_head == NULL);

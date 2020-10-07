@@ -38,6 +38,8 @@ void walk_free_list()
     node *curr = free_list_head;
     int num_free_chunks = 0;
 
+    printf("%p\n", curr);
+
     while (curr)
     {
         num_free_chunks++;
@@ -406,9 +408,6 @@ int main(int argc, char const *argv[])
     }
     else
     {
-        // start_shell();
-        int x = 42;
-        int res = (x >> 3) << 3;
-        printf("%d masked with 8 is %d\n", x, res);
+        start_shell();
     }
 }
