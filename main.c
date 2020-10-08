@@ -360,7 +360,7 @@ void start_shell()
             printf("You requested to free allocated chunk at address %d\n", address);
 
             // Make sure it is valid
-            if (address < 0 || address > HEAP_SIZE)
+            if (address < 0 || address + sizeof(header) > HEAP_SIZE)
             {
                 printf("That address is not valid\n");
                 continue;
