@@ -360,6 +360,12 @@ void start_shell()
             printf("You requested to free allocated chunk at address %d\n", address);
 
             // Make sure it is valid
+            if (address < 0 || address > HEAP_SIZE)
+            {
+                printf("That address is not valid\n");
+                continue;
+            }
+
             header *chunk = (header *)(address + offset);
             if (chunk->magic == MAGIC_NUMBER)
             {
