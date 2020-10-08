@@ -27,6 +27,8 @@ When allocating chunks, size 0 will not be accepted. I looked up what the typica
 
 The audit function will print a diagram of the chunks similar to what is seen in [chapter 17 of the 3ep book](http://pages.cs.wisc.edu/~remzi/OSTEP/vm-freespace.pdf). This function will also verify the integrity of the magic number for each allocated chunk, and make sure all chunks are aligned to the 64-bit word size.
 
+For my shell, I ditched the ability to free a chunk by it's index in regards to a list of allocated chunks as it seemed unfaithful to the actual parameter of free which is an address. I let the user free at an address now (that I make sure is within heap bounds so it doesn't crash), and it's only slightly different. When freeing in the code, you would free from the address of the start of your data, while freeing from the shell frees at the address of the header struct. This is done because of the way I display addresses, in which I show the address of the node/header of a chunk because it is more true to the location of the chunk, as opposed to the location of the data the chunk represents.
+
 # Tests
 
 Unless otherwise specified, all allocated chunks in tests will be 1/20 of the heap size. For a heap of size 4096, this means 204.8, which will translate to 224 after alignment and adding the size of the header.
