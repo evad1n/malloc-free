@@ -177,7 +177,7 @@ void audit()
 
 #pragma region Shell
 
-/* Walks through the heap till finding an allocated chunk at the specified index. Prints an error message if there is no such allocated chunk. */
+/* NOT USED. Walks through the heap till finding an allocated chunk at the specified index. Prints an error message if there is no such allocated chunk. */
 void free_at_index(int index)
 {
     // Return if index is less than 1
@@ -346,7 +346,7 @@ void start_shell()
         }
         else if (!strcmp(command, "malloc"))
         {
-            int size;
+            int size = 0;
             printf("Size of chunk to allocate: ");
             scanf("%d", &size);
             printf("You requested to allocate a chunk of size %d\n", size);
@@ -354,7 +354,7 @@ void start_shell()
         }
         else if (!strcmp(command, "free"))
         {
-            int address;
+            int address = -1;
             printf("Address of allocated chunk to free (address displayed in audit): ");
             scanf("%d", &address);
             printf("You requested to free allocated chunk at address %d\n", address);
@@ -369,6 +369,7 @@ void start_shell()
             else
             {
                 printf("No allocated chunk found at address %d\n", address);
+                printf("Try using 'audit' or 'walk allocated' to see the addresses of allocated chunks\n");
             }
         }
         else if (!strcmp(command, "test"))
