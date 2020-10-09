@@ -135,13 +135,14 @@ void my_free(void *ptr)
     header *hptr = (header *)ptr - 1;
     assert(hptr->magic == MAGIC_NUMBER);
     node *new_free_chunk = (node *)hptr;
+    size_t new_size = hptr->size - sizeof(header) + sizeof(node);
 
     // Edge case where there is no free list
     if (!free_list_head)
     {
         free_list_head = new_free_chunk;
         free_list_head->next = NULL;
-        free_list_head->size = hptr->size - sizeof(header) + sizeof(node);
+        free_list_head->size = new_size;
         return;
     }
 
@@ -161,14 +162,14 @@ void my_free(void *ptr)
     {
         // Add new free chunk to head of free list
         new_free_chunk->next = free_list_head;
-        new_free_chunk->size = hptr->size - sizeof(header) + sizeof(node);
+        new_free_chunk->size = new_size;
         free_list_head = new_free_chunk;
     }
     else
     {
         prev->next = new_free_chunk;
         new_free_chunk->next = curr;
-        new_free_chunk->size = hptr->size - sizeof(header) + sizeof(node);
+        new_free_chunk->size = new_size;
     }
 
     // Try to coalesce
