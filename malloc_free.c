@@ -98,7 +98,7 @@ void *my_malloc(size_t size)
         }
         else
         {
-            free_list_head = (node *)((char *)biggest_chunk + needed_size);
+            free_list_head = (node *)((void *)biggest_chunk + needed_size);
             free_list_head->size = prev_size - needed_size;
             free_list_head->next = prev_next;
         }
@@ -112,7 +112,7 @@ void *my_malloc(size_t size)
         }
         else
         {
-            node *split_free_chunk = (node *)((char *)biggest_chunk + needed_size);
+            node *split_free_chunk = (node *)((void *)biggest_chunk + needed_size);
             split_free_chunk->size = prev_size - needed_size;
             biggest_chunk_prev->next = split_free_chunk;
         }
