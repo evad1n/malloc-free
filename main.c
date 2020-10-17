@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <inttypes.h>
+#include "main.h"
 #include "malloc_free.h"
 #include "tests.h"
 

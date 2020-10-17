@@ -1,4 +1,4 @@
-NAME=malloc_free
+NAME=program
 CFLAGS=gcc -Wall -Werror -Wno-unknown-pragmas
 
 .PHONY: test

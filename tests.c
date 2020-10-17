@@ -1,7 +1,7 @@
 #include <stdbool.h>
+#include "tests.h"
 #include "malloc_free.h"
 #include "main.h"
-#include "tests.h"
 
 #pragma region Test_Helpers
 

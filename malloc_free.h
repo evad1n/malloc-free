@@ -1,5 +1,5 @@
-#ifndef _MALLOC_FREE_H_
-#define _MALLOC_FREE_H_
+#if !defined(MALLOC_FREE_H)
+#define MALLOC_FREE_H
 
 #include <stdio.h>
 #include <stdlib.h>
@@ -38,4 +38,4 @@ void *my_malloc(size_t size);
 void my_free(void *ptr);
 void init_heap();
 
-#endif
+#endif // MALLOC_FREE_H

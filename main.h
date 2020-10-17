@@ -1,5 +1,5 @@
-#ifndef _MAIN_H_
-#define _MAIN_H_
+#if !defined(MAIN_H)
+#define MAIN_H
 
 #include <string.h>
 
@@ -7,4 +7,4 @@ void walk_free_list();
 void walk_allocated_chunks();
 void audit();
 
-#endif
+#endif // MAIN_H
