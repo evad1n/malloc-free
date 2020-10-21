@@ -1,11 +1,7 @@
 #if !defined(MALLOC_FREE_H)
 #define MALLOC_FREE_H
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <sys/mman.h>
 #include <inttypes.h>
-#include <assert.h>
 
 // Represents an allocated chunk header
 typedef struct header_t
@@ -24,13 +20,9 @@ typedef struct node_t
 extern const size_t HEAP_SIZE;
 extern const int MAGIC_NUMBER;
 extern const size_t ALIGN_TO;
-
-// Pointer to start of heap
-void *heap_pointer;
-// Pointer to first node in free list
-node *free_list_head;
-// Offset for displaying understandable values
-uint64_t offset;
+extern void *heap_pointer;
+extern node *free_list_head;
+extern uint64_t offset;
 
 size_t align(size_t raw);
 void coalesce();

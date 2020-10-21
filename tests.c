@@ -1,7 +1,14 @@
+#include <stdio.h>
 #include <stdbool.h>
+#include <assert.h>
+#include <string.h>
+
 #include "tests.h"
 #include "malloc_free.h"
 #include "main.h"
+
+size_t MAX_CHUNKS;
+size_t CHUNK_SIZE;
 
 #pragma region Test_Helpers
 

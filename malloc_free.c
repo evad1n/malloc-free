@@ -1,3 +1,9 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/mman.h>
+#include <inttypes.h>
+#include <assert.h>
+
 #include "malloc_free.h"
 
 // Size of heap
@@ -6,6 +12,12 @@ const size_t HEAP_SIZE = 4096;
 const int MAGIC_NUMBER = 123456789;
 // Align to 64-bit word which is 8 bytes
 const size_t ALIGN_TO = 8;
+// Pointer to start of heap
+void *heap_pointer;
+// Pointer to first node in free list
+node *free_list_head;
+// Offset for displaying understandable values
+uint64_t offset;
 
 /* Given a requested size, returns the total aligned size needed. */
 size_t align(size_t raw)

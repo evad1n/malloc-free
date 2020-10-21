@@ -1,7 +1,8 @@
 #if !defined(TESTS_H)
 #define TESTS_H
 
-#include <stddef.h>
+extern size_t MAX_CHUNKS;
+extern size_t CHUNK_SIZE;
 
 void init_tests();
 void free_all_chunks();
@@ -14,8 +15,5 @@ void test_alternating_sequence();
 void test_worst_fit();
 void test_malloc_bad_size();
 void test_all();
-
-size_t MAX_CHUNKS;
-size_t CHUNK_SIZE;
 
 #endif // TESTS_H
