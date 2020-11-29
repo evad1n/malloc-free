@@ -26,25 +26,23 @@ size_t align(size_t raw)
     return aligned;
 }
 
-/* Coalesces all free chunks that are next to each other in memory. */
-void coalesce()
+/* Check for available coalescing around the recently freed chunk */
+void coalesce(node *prev, node *freed)
 {
-    // Walk through free list and while there are 2 next to each other keep merging
-    node *curr = free_list_head;
-    while (curr)
+    // Check chunk after freed
+    if (freed->next && (uint64_t)freed + sizeof(node) + freed->size == (uint64_t)freed->next)
     {
-        // Check to see if they are next to each other
-        if ((uint64_t)curr + sizeof(node) + curr->size == (uint64_t)curr->next)
-        {
-            node *temp = curr->next;
-            curr->next = temp->next;
-            curr->size = curr->size + temp->size + sizeof(node);
-        }
-        // Skip to next node if we didn't merge anything
-        else
-        {
-            curr = curr->next;
-        }
+        node *temp = freed->next;
+        freed->next = temp->next;
+        freed->size = freed->size + temp->size + sizeof(node);
+    }
+
+    // Check previous chunk
+    if (prev && (uint64_t)prev + sizeof(node) + prev->size == (uint64_t)prev->next)
+    {
+        node *temp = prev->next;
+        prev->next = temp->next;
+        prev->size = prev->size + temp->size + sizeof(node);
     }
 }
 
@@ -158,7 +156,7 @@ void my_free(void *ptr)
         return;
     }
 
-    // Insert into free list at the right place so need for reordering
+    // Insert into free list at the right place so no need for reordering
     node *prev = free_list_head;
     node *curr = free_list_head;
 
@@ -184,8 +182,8 @@ void my_free(void *ptr)
         new_free_chunk->size = new_size;
     }
 
-    // Try to coalesce
-    coalesce();
+    // Try to coalesce around freed chunk
+    coalesce(prev, new_free_chunk);
 }
 
 /* Initializes the heap and all global variables. */
