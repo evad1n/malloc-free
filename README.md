@@ -21,7 +21,7 @@ Tests can also be run from the interactive shell.
 
 I am using an 8 byte alignment, typical for a 64-bit word.
 
-I am using worst-fit allocation, and when freeing I am inserting in a sorted position.
+I am using worst-fit allocation, and when freeing I am inserting in a sorted position. I am also immediately coalescing around recently freed chunks.
 
 When allocating chunks, size 0 will not be accepted. I looked up what the typical case was with the official malloc, and it is allowed to either return NULL or return the address. I decided to return NULL as it made more sense to me. When allocating negative sizes, the behavior is the same as the official malloc and the size_t type will overflow to the max value and it will exceed the allowed size.
 
